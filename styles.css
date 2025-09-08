@@ -1,0 +1,377 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.toolbar {
+    width: 280px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tool-section, .color-section, .brush-section, .gesture-info {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.tool-btn, .clear-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tool-btn:hover, .clear-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.tool-btn.active {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.clear-btn {
+    background: #ff4757;
+    color: white;
+    border-color: #ff4757;
+}
+
+.clear-btn:hover {
+    background: #ff3838;
+    border-color: #ff3838;
+}
+
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.color-btn {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #ddd;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.color-btn.active {
+    border-color: #333;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+.brush-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.brush-slider {
+    width: 100%;
+    margin: 10px 0;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    outline: none;
+    cursor: pointer;
+}
+
+.brush-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.brush-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+#brushSizeValue {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.gesture-info {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.gesture-info p {
+    color: #666;
+    margin-bottom: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.camera-section {
+    border-bottom: none;
+}
+
+.camera-control-btn {
+    width: 100%;
+    height: 45px;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    background: #667eea;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.camera-control-btn:hover {
+    background: #5a67d8;
+    border-color: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.camera-control-btn:active {
+    transform: scale(0.95);
+}
+
+.camera-control-btn.active {
+    background: #48bb78;
+    border-color: #48bb78;
+}
+
+.camera-control-btn.active:hover {
+    background: #38a169;
+    border-color: #38a169;
+}
+
+.camera-gestures p {
+    color: #666;
+    margin-bottom: 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.camera-tips {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 5px;
+    border-left: 3px solid #667eea;
+}
+
+.camera-tips small {
+    color: #555;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+/* Camera preview styles */
+#cameraPreview {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+#cameraPreview:hover {
+    transform: scale(1.02);
+}
+
+.camera-btn {
+    transition: all 0.2s ease;
+}
+
+.camera-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Status indicators for camera */
+#cameraStatus {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#cameraStatus.active {
+    background: rgba(72, 187, 120, 0.9);
+}
+
+#cameraStatus.error {
+    background: rgba(245, 101, 101, 0.9);
+}
+
+.canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#drawingCanvas {
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    background: white;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.1);
+}
+
+.gesture-indicator {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.gesture-indicator.drawing {
+    background: rgba(102, 126, 234, 0.9);
+}
+
+.gesture-indicator.erasing {
+    background: rgba(255, 71, 87, 0.9);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .toolbar {
+        width: 100%;
+        height: 200px;
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 10px;
+    }
+    
+    .tool-section, .color-section, .brush-section {
+        margin-right: 20px;
+        margin-bottom: 0;
+        min-width: 200px;
+    }
+    
+    .gesture-info {
+        display: none;
+    }
+    
+    .canvas-container {
+        height: calc(100vh - 200px);
+    }
+}
+
+/* Touch feedback */
+.tool-btn:active, .color-btn:active, .clear-btn:active {
+    transform: scale(0.95);
+}
+
+/* Animation for smooth interactions */
+@keyframes pulse {
+    0% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+    }
+    50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+    }
+    100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+    }
+}
+
+.active-gesture {
+    animation: pulse 0.3s ease-in-out;
+}
+
+/* Gesture indicator improvements */
+.gesture-indicator {
+    max-width: 300px;
+    word-wrap: break-word;
+}
+
+.gesture-indicator strong {
+    color: #667eea;
+}
+
+.gesture-indicator small {
+    opacity: 0.8;
+    font-size: 12px;
+}

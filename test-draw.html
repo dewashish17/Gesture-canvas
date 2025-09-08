@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drawing Test</title>
+    <style>
+        canvas { border: 1px solid black; background: white; }
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        #info { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h2>Drawing Engine Test</h2>
+    <div id="info">Status: Loading...</div>
+    <canvas id="testCanvas" width="800" height="600"></canvas>
+    
+    <script src="webgl-utils.js"></script>
+    <script src="drawing-engine.js"></script>
+    <script>
+        const canvas = document.getElementById('testCanvas');
+        const info = document.getElementById('info');
+        let drawingEngine;
+        let isDrawing = false;
+        
+        try {
+            drawingEngine = new DrawingEngine(canvas);
+            info.textContent = 'Drawing engine initialized. Try clicking and dragging.';
+            
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                isDrawing = true;
+                drawingEngine.startStroke(x, y, 1.0);
+                info.textContent = `Started drawing at ${x}, ${y}`;
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                drawingEngine.continueStroke(x, y, 1.0);
+                info.textContent = `Drawing at ${x}, ${y}`;
+            });
+            
+            canvas.addEventListener('mouseup', () => {
+                if (isDrawing) {
+                    isDrawing = false;
+                    drawingEngine.endStroke();
+                    info.textContent = 'Finished drawing stroke';
+                }
+            });
+            
+        } catch (error) {
+            info.textContent = 'Error: ' + error.message;
+            console.error(error);
+        }
+    </script>
+</body>
+</html>

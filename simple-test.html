@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Drawing Test</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; }
+        canvas { 
+            border: 2px solid #333; 
+            background: white; 
+            cursor: crosshair;
+            display: block;
+            margin: 20px 0;
+        }
+        .info { 
+            font-family: Arial, sans-serif; 
+            margin: 10px 0; 
+            padding: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+        }
+        .status { color: green; }
+        .error { color: red; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>Simple Drawing Test</h1>
+    <div id="status" class="info">Loading...</div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <button onclick="testBasicDraw()">Test Basic Draw</button>
+    <button onclick="clearCanvas()">Clear</button>
+    
+    <div class="info">
+        <strong>Instructions:</strong><br>
+        1. Click and drag on the canvas to draw<br>
+        2. Use the "Test Basic Draw" button to test programmatic drawing<br>
+        3. Check the status messages above
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        function updateStatus(message, isError = false) {
+            status.textContent = message;
+            status.className = isError ? 'info error' : 'info status';
+            console.log(message);
+        }
+        
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        
+        function draw(x, y) {
+            if (!isDrawing) return;
+            
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#000';
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            lastX = x;
+            lastY = y;
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const pos = getMousePos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            updateStatus(`Started drawing at ${pos.x}, ${pos.y}`);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            draw(pos.x, pos.y);
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            if (isDrawing) {
+                isDrawing = false;
+                updateStatus('Finished drawing stroke');
+            }
+        });
+        
+        canvas.addEventListener('mouseout', () => {
+            if (isDrawing) {
+                isDrawing = false;
+                updateStatus('Drawing ended (mouse left canvas)');
+            }
+        });
+        
+        // Touch events
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const pos = {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+            
+            isDrawing = true;
+            lastX = pos.x;
+            lastY = pos.y;
+            updateStatus(`Touch started at ${pos.x}, ${pos.y}`);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const pos = {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+            
+            draw(pos.x, pos.y);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (isDrawing) {
+                isDrawing = false;
+                updateStatus('Touch drawing finished');
+            }
+        });
+        
+        function testBasicDraw() {
+            updateStatus('Testing programmatic drawing...');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw test pattern
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(100, 100);
+            ctx.lineTo(200, 150);
+            ctx.lineTo(300, 100);
+            ctx.lineTo(400, 200);
+            ctx.stroke();
+            
+            // Draw circle
+            ctx.strokeStyle = '#0000ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(500, 300, 50, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            updateStatus('Test drawing completed successfully!');
+        }
+        
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateStatus('Canvas cleared');
+        }
+        
+        // Initialize
+        updateStatus('Canvas ready - try drawing with mouse or touch!');
+    </script>
+</body>
+</html>

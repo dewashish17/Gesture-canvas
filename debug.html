@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drawing Debug Console</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            margin: 20px; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+        }
+        .debug-panel { 
+            background: #2a2a2a; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            border: 1px solid #444;
+        }
+        .status { color: #00ff00; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .info { color: #44aaff; }
+        button { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            margin: 5px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        button:hover { background: #5a67d8; }
+        canvas { 
+            border: 2px solid #667eea; 
+            background: white; 
+            margin: 10px 0; 
+        }
+        #logs { 
+            height: 200px; 
+            overflow-y: auto; 
+            background: #111; 
+            padding: 10px; 
+            border: 1px solid #333; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Drawing App Debug Console</h1>
+    
+    <div class="debug-panel">
+        <h3>System Status</h3>
+        <div id="systemStatus">Checking...</div>
+    </div>
+    
+    <div class="debug-panel">
+        <h3>WebGL Test</h3>
+        <canvas id="debugCanvas" width="400" height="300"></canvas>
+        <br>
+        <button onclick="testWebGL()">Test WebGL Drawing</button>
+        <button onclick="testCamera()">Test Camera</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+    
+    <div class="debug-panel">
+        <h3>Debug Logs</h3>
+        <div id="logs"></div>
+    </div>
+    
+    <!-- Include the main scripts -->
+    <script src="webgl-utils.js"></script>
+    <script src="drawing-engine.js"></script>
+    <script src="camera-gesture.js"></script>
+    
+    <script>
+        let debugDrawingEngine;
+        let debugCameraGesture;
+        let logContainer = document.getElementById('logs');
+        
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'status');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warning');
+        };
+        
+        function checkSystemStatus() {
+            const status = document.getElementById('systemStatus');
+            let statusHTML = '';
+            
+            // Check WebGL support
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            statusHTML += `<div class="${gl ? 'status' : 'error'}">WebGL: ${gl ? '✓ Supported' : '✗ Not supported'}</div>`;
+            
+            // Check MediaPipe
+            const hasMediaPipe = typeof Hands !== 'undefined';
+            statusHTML += `<div class="${hasMediaPipe ? 'status' : 'warning'}">MediaPipe: ${hasMediaPipe ? '✓ Loaded' : '⚠ Not loaded'}</div>`;
+            
+            // Check camera support
+            const hasCamera = !!navigator.mediaDevices?.getUserMedia;
+            statusHTML += `<div class="${hasCamera ? 'status' : 'error'}">Camera API: ${hasCamera ? '✓ Available' : '✗ Not available'}</div>`;
+            
+            // Check touch support
+            const hasTouch = 'ontouchstart' in window;
+            statusHTML += `<div class="info">Touch Support: ${hasTouch ? '✓ Available' : '✗ Not available'}</div>`;
+            
+            status.innerHTML = statusHTML;
+        }
+        
+        function testWebGL() {
+            addLog('Starting WebGL test...', 'info');
+            
+            try {
+                const canvas = document.getElementById('debugCanvas');
+                debugDrawingEngine = new DrawingEngine(canvas);
+                
+                addLog('DrawingEngine initialized successfully', 'status');
+                
+                // Test drawing a simple line
+                setTimeout(() => {
+                    debugDrawingEngine.startStroke(50, 50, 1.0);
+                    debugDrawingEngine.continueStroke(100, 100, 1.0);
+                    debugDrawingEngine.continueStroke(150, 50, 1.0);
+                    debugDrawingEngine.continueStroke(200, 100, 1.0);
+                    debugDrawingEngine.endStroke();
+                    
+                    addLog('Test stroke drawn successfully', 'status');
+                }, 100);
+                
+            } catch (error) {
+                addLog(`WebGL test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCamera() {
+            addLog('Testing camera access...', 'info');
+            
+            try {
+                if (!debugCameraGesture) {
+                    if (!debugDrawingEngine) {
+                        await testWebGL();
+                    }
+                    debugCameraGesture = new CameraGestureDetector(debugDrawingEngine, null);
+                }
+                
+                await debugCameraGesture.startCamera();
+                addLog('Camera started successfully', 'status');
+                
+            } catch (error) {
+                addLog(`Camera test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLogs() {
+            logContainer.innerHTML = '';
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            checkSystemStatus();
+            addLog('Debug console initialized', 'info');
+        });
+    </script>
+</body>
+</html>

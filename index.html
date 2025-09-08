@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Drawing Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- MediaPipe dependencies - Fixed URLs -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <div class="tool-section">
+                <h3>Tools</h3>
+                <button class="tool-btn active" data-tool="pen" title="Pen">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                </button>
+                <button class="tool-btn" data-tool="eraser" title="Eraser">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0M4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53-6.36-6.36-3.54 3.36z"/>
+                    </svg>
+                </button>
+                <button class="clear-btn" title="Clear Canvas">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="color-section">
+                <h3>Colors</h3>
+                <div class="color-palette">
+                    <button class="color-btn active" data-color="#000000" style="background-color: #000000" title="Black"></button>
+                    <button class="color-btn" data-color="#FF0000" style="background-color: #FF0000" title="Red"></button>
+                    <button class="color-btn" data-color="#00FF00" style="background-color: #00FF00" title="Green"></button>
+                    <button class="color-btn" data-color="#0000FF" style="background-color: #0000FF" title="Blue"></button>
+                    <button class="color-btn" data-color="#FFFF00" style="background-color: #FFFF00" title="Yellow"></button>
+                    <button class="color-btn" data-color="#FF00FF" style="background-color: #FF00FF" title="Magenta"></button>
+                    <button class="color-btn" data-color="#00FFFF" style="background-color: #00FFFF" title="Cyan"></button>
+                    <button class="color-btn" data-color="#FFA500" style="background-color: #FFA500" title="Orange"></button>
+                    <button class="color-btn" data-color="#800080" style="background-color: #800080" title="Purple"></button>
+                    <button class="color-btn" data-color="#FFC0CB" style="background-color: #FFC0CB" title="Pink"></button>
+                </div>
+            </div>
+            
+            <div class="brush-section">
+                <h3>Brush Size</h3>
+                <input type="range" id="brushSize" min="1" max="50" value="5" class="brush-slider">
+                <span id="brushSizeValue">5px</span>
+            </div>
+            
+            <div class="gesture-info">
+                <h3>Touch Gestures</h3>
+                <p>✋ Draw: Move finger/mouse</p>
+                <p>👆 Tap: Select tools</p>
+                <p>🖐️ Palm: Erase mode</p>
+            </div>
+            
+            <div class="camera-section">
+                <h3>🎥 Camera Gestures (Primary)</h3>
+                <button id="startCameraBtn" class="camera-control-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/>
+                    </svg>
+                    Start Camera
+                </button>
+                <div class="camera-gestures">
+                    <p><strong>🖐️ Open palm:</strong> Eraser (pink) - BEST</p>
+                    <p><strong>👆 Point:</strong> Draw (blue) - VERY GOOD</p>
+                    <p><strong>✌️ Peace:</strong> Draw (green) - VERY GOOD</p>
+                    <p><strong>🤟 Rock sign:</strong> Cursor only (orange) - GOOD</p>
+                    <p><strong>🖖 Three fingers:</strong> Alt draw (light green)</p>
+                </div>
+                <div class="camera-tips">
+                    <small>💡 Tips: Good lighting, keep hand visible, allow camera permissions</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="drawingCanvas"></canvas>
+            <div class="gesture-indicator" id="gestureIndicator">Ready to draw</div>
+        </div>
+    </div>
+    
+    <script src="webgl-utils.js"></script>
+    <script src="drawing-engine.js"></script>
+    <script src="gesture-handler.js"></script>
+    <script src="camera-gesture.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
