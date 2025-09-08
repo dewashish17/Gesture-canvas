@@ -87,12 +87,21 @@ class DrawingApp {
             });
         });
         
-        // Clear button
+        // Clear button - enhanced with better debugging
         const clearButton = document.querySelector('.clear-btn');
         if (clearButton) {
+            console.log('✅ Clear button found and event listeners attached');
+            
             clearButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.clearCanvas();
+                console.log('🧹 Clear button clicked - attempting to clear canvas');
+                
+                try {
+                    this.clearCanvas();
+                    console.log('✅ Clear canvas function called successfully');
+                } catch (error) {
+                    console.error('❌ Error in clear canvas function:', error);
+                }
                 
                 // Visual feedback
                 clearButton.classList.add('active-gesture');
@@ -102,8 +111,11 @@ class DrawingApp {
             // Touch support
             clearButton.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                console.log('🧹 Clear button touched - attempting to clear canvas');
                 this.clearCanvas();
             });
+        } else {
+            console.error('❌ Clear button not found in DOM');
         }
         
         // Brush size slider
@@ -387,19 +399,42 @@ class DrawingApp {
     }
     
     clearCanvas() {
-        if (this.drawingEngine) {
-            this.drawingEngine.clear();
-            console.log('Canvas cleared');
-        }
+        console.log('🧹 clearCanvas() method called');
         
-        // Show confirmation feedback
-        const indicator = document.getElementById('gestureIndicator');
-        if (indicator) {
-            const originalText = indicator.textContent;
-            indicator.textContent = 'Canvas cleared!';
-            setTimeout(() => {
-                indicator.textContent = originalText;
-            }, 2000);
+        try {
+            // Clear WebGL canvas
+            if (this.drawingEngine) {
+                this.drawingEngine.clear();
+                console.log('✅ WebGL canvas cleared');
+            } else {
+                console.warn('⚠️ Drawing engine not available');
+            }
+            
+            // Clear fallback canvas
+            if (this.fallbackCtx && this.fallbackCanvas) {
+                this.fallbackCtx.clearRect(0, 0, this.fallbackCanvas.width, this.fallbackCanvas.height);
+                console.log('✅ Fallback canvas cleared');
+            } else {
+                console.warn('⚠️ Fallback canvas not available');
+            }
+            
+            console.log('✅ Canvas clearing completed');
+            
+            // Show confirmation feedback
+            const indicator = document.getElementById('gestureIndicator');
+            if (indicator) {
+                const originalText = indicator.textContent;
+                indicator.textContent = '🧹 Canvas cleared!';
+                indicator.style.background = 'rgba(72, 187, 120, 0.9)';
+                
+                setTimeout(() => {
+                    indicator.textContent = originalText;
+                    indicator.style.background = '';
+                }, 2000);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error clearing canvas:', error);
         }
     }
     
@@ -608,8 +643,66 @@ class DrawingApp {
                 // Force cursor to show at center
                 this.cameraGestureDetector.updateHandCursor(400, 300);
                 console.log('🎯 Manual fist positioning mode activated');
+            } else if (e.key === 'x') {
+                console.log('🧹 Testing clear canvas manually...');
+                this.clearCanvas();
+                console.log('✅ Manual clear canvas executed');
+            } else if (e.key === 'z') {
+                console.log('🧪 Testing emergency canvas clear...');
+                this.emergencyClear();
+                console.log('✅ Emergency clear executed');
+            } else if (e.key === 'g') {
+                console.log('👍 Testing gesture tap on clear button...');
+                const clearBtn = document.querySelector('.clear-btn');
+                if (clearBtn) {
+                    console.log('Clear button found, simulating gesture tap...');
+                    clearBtn.click();
+                    console.log('✅ Clear button clicked via gesture simulation');
+                } else {
+                    console.error('❌ Clear button not found');
+                }
             }
         });
+    }
+    
+    emergencyClear() {
+        // Emergency clear that works regardless of WebGL state
+        console.log('🚨 Emergency clear - trying all methods...');
+        
+        try {
+            // Method 1: WebGL clear
+            if (this.drawingEngine) {
+                this.drawingEngine.clear();
+                console.log('✅ WebGL clear attempted');
+            }
+            
+            // Method 2: Fallback canvas clear
+            if (this.fallbackCtx && this.fallbackCanvas) {
+                this.fallbackCtx.clearRect(0, 0, this.fallbackCanvas.width, this.fallbackCanvas.height);
+                console.log('✅ Fallback canvas cleared');
+            }
+            
+            // Method 3: Direct canvas clear (if available)
+            const mainCanvas = document.getElementById('drawingCanvas');
+            if (mainCanvas) {
+                const ctx = mainCanvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+                    console.log('✅ Direct 2D canvas clear attempted');
+                }
+            }
+            
+            // Method 4: Force re-initialization
+            if (this.drawingEngine) {
+                this.drawingEngine.setupRenderTargets();
+                console.log('✅ Render targets re-initialized');
+            }
+            
+            console.log('🧹 Emergency clear completed');
+            
+        } catch (error) {
+            console.error('❌ Emergency clear failed:', error);
+        }
     }
     
     // Public API methods

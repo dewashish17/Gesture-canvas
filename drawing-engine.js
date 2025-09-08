@@ -321,19 +321,34 @@ class DrawingEngine {
     }
     
     clear() {
+        console.log('🧹 Drawing engine clear() method called');
         const gl = this.gl;
         
-        // Clear both buffers
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.frontFramebuffer);
-        gl.clearColor(1.0, 1.0, 1.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        if (!gl) {
+            console.error('❌ WebGL context not available');
+            return;
+        }
         
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.backFramebuffer);
-        gl.clearColor(1.0, 1.0, 1.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        
-        // Render to screen
-        this.renderToScreen();
+        try {
+            // Clear both buffers
+            console.log('🧽 Clearing front buffer...');
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.frontFramebuffer);
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            
+            console.log('🧽 Clearing back buffer...');
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.backFramebuffer);
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            
+            // Render to screen
+            console.log('🖥️ Rendering cleared canvas to screen...');
+            this.renderToScreen();
+            
+            console.log('✅ Canvas cleared successfully');
+        } catch (error) {
+            console.error('❌ Error in WebGL clear operation:', error);
+        }
     }
     
     getImageData() {

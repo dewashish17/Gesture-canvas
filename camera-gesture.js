@@ -32,6 +32,12 @@ class CameraGestureDetector {
         this.mediaPipeReady = false;
         this.permissionGranted = false;
         
+        // Gesture UI interaction
+        this.lastTapTime = 0;
+        this.tapCooldown = 1000; // 1 second between taps
+        this.hoveredElement = null;
+        this.tapZones = new Map(); // Store clickable areas
+        
         this.initializeMediaPipe();
     }
     
@@ -136,12 +142,15 @@ class CameraGestureDetector {
                 console.log('Starting MediaPipe hand tracking...');
                 this.startDetection();
                 this.createHandCursor();
-                this.updateCameraStatus('MediaPipe camera active - Show your hand');
-            } else {
-                console.log('Starting basic camera mode...');
-                this.startBasicVideoLoop();
-                this.updateCameraStatus('Basic camera active - No gesture detection');
-            }
+            this.updateCameraStatus('MediaPipe camera active - Show your hand');
+        } else {
+            console.log('Starting basic camera mode...');
+            this.startBasicVideoLoop();
+            this.updateCameraStatus('Basic camera active - No gesture detection');
+        }
+        
+        // Setup tap zones for UI interaction
+        this.setupTapZones();
             
             this.isActive = true;
             console.log('Camera started successfully');
@@ -490,13 +499,19 @@ class CameraGestureDetector {
             return 'three';
         }
         
-        // 6. Fallback for partial detections
+        // 6. THUMBS UP (SPECIAL) - Only thumb extended = Tap gesture
+        else if (extendedCount === 1 && thumbExtended && !indexExtended) {
+            console.log('👍 THUMBS UP detected - tap gesture');
+            return 'tap';
+        }
+        
+        // 7. Fallback for partial detections
         else if (indexExtended) {
             console.log('👆 Index extended (fallback) - point mode');
             return 'point';
         }
         
-        // 7. Unknown/Poor detection - no action
+        // 8. Unknown/Poor detection - no action
         else {
             console.log('❓ Unknown gesture (poor detection)');
             return 'none';
@@ -561,6 +576,15 @@ class CameraGestureDetector {
                 console.log('✏️ Pen tool activated (three fingers)');
                 break;
                 
+            case 'tap':
+                this.updateGestureIndicator('👍 Thumbs up - Tap gesture');
+                if (this.isDrawing) {
+                    this.endDrawing();
+                    console.log('⏹️ Drawing stopped for tap gesture');
+                }
+                console.log('👍 Tap gesture mode active');
+                break;
+                
             case 'fist':
                 // Keep fist as fallback but with lower priority
                 this.updateGestureIndicator('✊ Fist - Cursor positioning (low confidence)');
@@ -619,12 +643,35 @@ class CameraGestureDetector {
             this.drawFallbackPoint(screenX, screenY);
         }
         
-        // For positioning gestures: just show cursor position without drawing
+        // For positioning gestures: check for UI interactions and show cursor position
         const positioningGestures = ['rock', 'fist'];
         if (positioningGestures.includes(this.currentGesture)) {
             console.log(`${this.currentGesture === 'rock' ? '🤟' : '👊'} ${this.currentGesture} - Cursor positioning at`, screenX.toFixed(1), screenY.toFixed(1));
-            // Cursor position is updated by updateHandCursor() call above
-            // No drawing, just cursor positioning
+            
+            // Check for hover over UI elements
+            this.checkHoverAndTap(screenX, screenY);
+        }
+        
+        // Handle tap gesture - thumbs up triggers UI interaction
+        if (this.currentGesture === 'tap') {
+            console.log('👍 Tap gesture active - checking for UI interaction');
+            const tapped = this.performTap(screenX, screenY);
+            if (tapped) {
+                console.log('✅ Successfully tapped UI element');
+            } else {
+                // Just check for hover if no tap
+                this.checkHoverAndTap(screenX, screenY);
+            }
+        }
+        
+        // Handle quick tap gesture (brief point gesture)
+        if (this.currentGesture === 'point') {
+            // Check if we're over a UI element for potential tap
+            const hoveredZone = this.checkHoverAndTap(screenX, screenY);
+            if (hoveredZone && !this.isDrawing) {
+                // If pointing at UI element for a moment, it might be a tap
+                console.log('👆 Pointing at UI element:', hoveredZone.label);
+            }
         }
         
         this.lastFingerPos = { x: canvasX, y: canvasY };
@@ -706,6 +753,171 @@ class CameraGestureDetector {
         console.log('Ended camera drawing');
     }
     
+    setupTapZones() {
+        // Map clickable UI elements for gesture interaction
+        this.tapZones.clear();
+        
+        // Tool buttons
+        const toolButtons = document.querySelectorAll('.tool-btn');
+        toolButtons.forEach(btn => {
+            const rect = btn.getBoundingClientRect();
+            this.tapZones.set('tool_' + btn.dataset.tool, {
+                element: btn,
+                rect: rect,
+                action: () => {
+                    console.log('🎯 Gesture tap on tool:', btn.dataset.tool);
+                    btn.click();
+                },
+                label: btn.dataset.tool + ' tool'
+            });
+        });
+        
+        // Color buttons
+        const colorButtons = document.querySelectorAll('.color-btn');
+        colorButtons.forEach((btn, index) => {
+            const rect = btn.getBoundingClientRect();
+            this.tapZones.set('color_' + index, {
+                element: btn,
+                rect: rect,
+                action: () => {
+                    console.log('🎯 Gesture tap on color:', btn.dataset.color);
+                    btn.click();
+                },
+                label: 'color ' + btn.dataset.color
+            });
+        });
+        
+        // Clear button - check multiple possible selectors
+        const clearBtn = document.querySelector('.clear-btn') || 
+                         document.querySelector('[title="Clear Canvas"]') ||
+                         document.querySelector('button:contains("Clear")');
+        
+        if (clearBtn) {
+            const rect = clearBtn.getBoundingClientRect();
+            this.tapZones.set('clear', {
+                element: clearBtn,
+                rect: rect,
+                action: () => {
+                    console.log('🎯 Gesture tap on clear button');
+                    console.log('Clear button element:', clearBtn);
+                    
+                    // Try multiple ways to trigger clear
+                    clearBtn.click();
+                    
+                    // Also try direct clear action if available
+                    if (window.drawingApp && window.drawingApp.clearCanvas) {
+                        console.log('🧹 Calling direct clearCanvas method');
+                        window.drawingApp.clearCanvas();
+                    }
+                },
+                label: 'clear canvas'
+            });
+            console.log('✅ Clear button found and mapped for gestures');
+        } else {
+            console.warn('⚠️ Clear button not found for gesture mapping');
+        }
+        
+        // Brush size slider
+        const brushSlider = document.getElementById('brushSize');
+        if (brushSlider) {
+            const rect = brushSlider.getBoundingClientRect();
+            this.tapZones.set('brush_slider', {
+                element: brushSlider,
+                rect: rect,
+                action: (x, y) => {
+                    // Calculate slider value based on tap position
+                    const percent = (x - rect.left) / rect.width;
+                    const value = Math.round(1 + percent * 49); // 1-50 range
+                    brushSlider.value = value;
+                    brushSlider.dispatchEvent(new Event('input'));
+                    console.log('🎯 Gesture tap on brush slider, set to:', value);
+                },
+                label: 'brush size slider'
+            });
+        }
+        
+        console.log('📍 Setup', this.tapZones.size, 'tap zones for gesture interaction');
+    }
+    
+    checkHoverAndTap(screenX, screenY) {
+        // Check if cursor is over any UI element
+        let hoveredZone = null;
+        
+        for (const [zoneId, zone] of this.tapZones) {
+            const rect = zone.rect;
+            if (screenX >= rect.left && screenX <= rect.right && 
+                screenY >= rect.top && screenY <= rect.bottom) {
+                hoveredZone = zone;
+                break;
+            }
+        }
+        
+        // Update hover state
+        if (hoveredZone !== this.hoveredElement) {
+            if (this.hoveredElement) {
+                // Remove hover from previous element
+                this.hoveredElement.element.classList.remove('gesture-hover');
+            }
+            
+            if (hoveredZone) {
+                // Add hover to new element
+                hoveredZone.element.classList.add('gesture-hover');
+                this.updateGestureIndicator(`👆 Hovering over: ${hoveredZone.label}`);
+                console.log('👆 Hovering over:', hoveredZone.label);
+            }
+            
+            this.hoveredElement = hoveredZone;
+        }
+        
+        return hoveredZone;
+    }
+    
+    performTap(screenX, screenY) {
+        const now = Date.now();
+        
+        // Check cooldown
+        if (now - this.lastTapTime < this.tapCooldown) {
+            console.log('⏰ Tap cooldown active');
+            return false;
+        }
+        
+        // Refresh tap zones in case elements moved
+        this.setupTapZones();
+        
+        const zone = this.checkHoverAndTap(screenX, screenY);
+        if (zone) {
+            this.lastTapTime = now;
+            
+            console.log('🎯 Attempting to tap:', zone.label);
+            console.log('📍 Tap coordinates:', screenX, screenY);
+            console.log('📦 Element rect:', zone.rect);
+            
+            // Visual feedback
+            zone.element.classList.add('gesture-tap');
+            setTimeout(() => {
+                zone.element.classList.remove('gesture-tap');
+            }, 300);
+            
+            // Execute action
+            if (typeof zone.action === 'function') {
+                try {
+                    zone.action(screenX, screenY);
+                    this.updateGestureIndicator(`✅ Tapped: ${zone.label}`);
+                    console.log('✅ Tap action executed successfully');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Error executing tap action:', error);
+                    return false;
+                }
+            }
+        } else {
+            console.log('❌ No tap zone found at coordinates:', screenX, screenY);
+            console.log('Available zones:', Array.from(this.tapZones.keys()));
+        }
+        
+        return false;
+    }
+    
     drawFallbackPoint(screenX, screenY) {
         // Draw immediate visual feedback on fallback canvas
         if (window.drawingApp && window.drawingApp.fallbackCtx) {
@@ -782,6 +994,10 @@ class CameraGestureDetector {
             case 'rock':
                 color = '#ff6600'; // Orange-red for rock positioning (GOOD detection)
                 size = 18;
+                break;
+            case 'tap':
+                color = '#ffff00'; // Yellow for tap gesture
+                size = 22;
                 break;
             case 'fist':
                 color = '#999999'; // Gray for fist positioning (POOR detection)
